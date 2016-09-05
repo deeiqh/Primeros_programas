@@ -1,0 +1,21 @@
+//1.10
+//printf("1234\b5sdf\b\b\b\n");
+
+#include <stdio.h>
+
+main()
+{
+    int c;
+    while ((c = getchar()) != EOF)
+        if (c == '\t')
+            printf("\\t");
+        else
+            if (c == '\b')
+            printf("\\b");
+        else
+            if (c == '\\')
+            printf("\\");
+        else
+            printf("%c",c);
+}
+
