@@ -1,114 +1,106 @@
 #include <stdio.h>
+#include <ctype.h>  
+#include <string.h>
+#define MAXWORD 100
+#define NKEYS (sizeof keytab / sizeof keytab[0])
 
-main()
+#include <stdio.h>
+#define BUFSIZE 100
+
+struct key {
+   char *word;
+   int count;
+} keytab[] = { //tabulacion de las llaves
+   "auto", 0,
+   "break", 0,
+   "case", 0,
+   "char", 0,
+   "const", 0,
+   "continue", 0,
+   "default", 0,
+   /* ... */
+   "unsigned", 0,
+   "void", 0,
+   "volatile", 0,
+   "aaaa", 0
+};
+
+char buf[BUFSIZE];
+int bufp = 0;
+
+int getword(char *, int);
+struct key *binsearch(char *, struct key *, int);
+
+int getch(void)
 {
-    /*
-    int a = 123;
-    printf("%d %d", sizeof(a), sizeof(123L));
-    */
-    char str[33];
-    str[0] = 'h';
-    str[1] = 'O';
-    str[2] = 'L';
-    str[3] = 'A';
-    str[4] = '\0';
-
-    printf("%d\n", strlen(str));
-    printf("%c\n", str[1] );
-    //printf("%s\n", squeeze(str,'O'));
-    printf("%s\n", strcat(str,", PC"));
-
-    int i;
-    int numeros[10];
-    for( i=1;i<=10;++i)
-        numeros[i] = i;
-    for( i=1;i<=10;++i)
-        printf("%d ", numeros[i]);
-
-    printf(" Pos %d: %d",7 , busqueda_binaria(7, numeros, 10));
-
+    return (bufp > 0) ? buf[--bufp] : getchar();
 }
 
-int busqueda_binaria(int x, int v[], int n)
+void ungetch(int c)
 {
-    int low, high, mid;
-
-    low = 0;
-    high = n - 1;
-    while (low <= high){
-        mid = (low+high)/2;
-        if (x < v[mid])
-            high = mid - 1;
-        else if (x > v[mid])
-            low = mid + 1;
-        else
-            return mid;
-    }
-    return -1;
-}
-
-int strlen(char s[])
-{
-    int i;
-    i = 0;
-    while (s[i] != '\0')
-        ++i;
-    return i;
-}
-
-int lower(int c)
-{
-    if (c >= 'A' && c <='Z')
-        return c + 'a' - 'A';
+    if (bufp >= BUFSIZE)
+        printf("ungetch: muchos caracteres\n");
     else
-        return c;
+        buf[bufp++] = c;
 }
 
-int squeeze (char s[], int c)
+/* count C keywords; pointer version */
+int main()
 {
-    int i,j;
-    for (i = j = 0; s[i] != '\0';i++)
-        if(s[i] != c)
-            s [j++] = s[i];
-    s[j] = '\0';
+   char word[MAXWORD];
+   struct key *p;
+
+   while (getword(word, MAXWORD) != EOF)
+       if (isalpha(word[0]))
+           if ((p=binsearch(word, keytab, NKEYS)) != NULL)
+               p->count++;
+   for (p = keytab; p < keytab + NKEYS; p++)
+       if (p->count > 0)
+           printf("%4d %s\n", p->count, p->word);
+   return 0;
 }
 
-void strcat(char s[], char t[])
+
+/* binsearch: find word in tab[0]...tab[n-1] */
+struct key *binsearch(char *word, struct key *tab, int n)
 {
-    int i, j;
-    i = j = 0;
-    while (s[i] != '\0')
-        i++;
-    while ((s[i++] = t[j++]) != '\0')
-        ;
+   int cond;
+   struct key *low = &tab[0];
+   struct key *high = &tab[n];
+   struct key *mid;
+
+   while (low < high) {
+       mid = low + (high-low) / 2;
+       if ((cond = strcmp(word, mid->word)) < 0)
+           high = mid;
+       else if (cond > 0)
+           low = mid + 1;
+       else
+           return mid;
+   }
+   return NULL;
 }
 
+/* getword:  get next word or character from input */
+int getword(char *word, int lim)
+{
+   int c, getch(void);
+   void ungetch(int);
+   char *w = word;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   while (isspace(c = getch()))
+       ;
+   if (c != EOF)
+       *w++ = c;
+   if (!isalpha(c)) {
+       *w = '\0';
+       return c;
+   }
+   for ( ; --lim > 0; w++)
+       if (!isalnum(*w = getch())) {
+           ungetch(*w);
+           break;
+       }
+   *w = '\0';
+   return word[0];
+}
